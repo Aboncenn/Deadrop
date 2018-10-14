@@ -9,24 +9,24 @@
   <script>hljs.initHighlightingOnLoad();</script>
 </head>
 <style>
-body{
-  background-color: #1fbed6;
-  font-size: 20px;
-}
-p, h1, form{
-  color : white;
-}
-form{
-  height: 100px;
-  padding-left: 25%;
-}
-input{
-  margin: 2%;
-}
-button{
-  margin-left: 12%;
-  margin-top: 2%;
-}
+  body{
+    background-color: #1fbed6;
+    font-size: 20px;
+  }
+  p, h1, form{
+    color : white;
+  }
+  form{
+    height: 100px;
+    padding-left: 25%;
+  }
+  input{
+    margin: 2%;
+  }
+  button{
+    margin-left: 12%;
+    margin-top: 2%;
+  }
 </style>
 <body>
   <h1>DEADROP</h1>
@@ -58,26 +58,31 @@ if ($_POST != null && !empty($_POST['crypto'])) {
 Deny from all";
 
     //Création premier dossier + .htaccess
-    mkdir($folder1, 0700);
-    $folder_htaccess = fopen($folder1.'/.htaccess', "w") or die("Unable to open file!");
+    mkdir("data/".$folder1, 0700);
+    $folder_htaccess = fopen("data/".$folder1.'/.htaccess', "w") or die("Unable to open file!");
     fwrite($folder_htaccess, $access);
     fclose($folder_htaccess);
 
     //Création second dossier + .htaccess
-    mkdir($folder1.'/'.$folder2, 0700);
-    $folder_htaccess1 = fopen($folder1.'/'.$folder2.'/.htaccess', "w") or die("Unable to open file!");
+    mkdir("data/".$folder1.'/'.$folder2, 0700);
+    $folder_htaccess1 = fopen("data/".$folder1.'/'.$folder2.'/.htaccess', "w") or die("Unable to open file!");
     fwrite($folder_htaccess1, $access);
     fclose($folder_htaccess1);
 
     // Création d'un fichier du nom de l'id
-    $write = fopen($folder1.'/'.$folder2.'/'.$files, "w") or die("Unable to open file!");
+    $write = fopen("data/".$folder1.'/'.$folder2.'/'.$files, "w") or die("Unable to open file!");
     fwrite($write, $_POST['time']);
     fwrite($write, $_POST['crypto']);
     fclose($write);
 
+    // Lecture du fichier pour le burn
+    $read =  file_get_contents("data/".$folder1.'/'.$folder2."/". $files);
+    // Vérification du timestamp
+    $check = json_decode($read);
+
     // Création du .bar
-    if ($_POST['burning'] == "true") {
-        $write = fopen($folder1.'/'.$folder2.'/'.$files.".bar", "w") or die("Unable to open file!");
+    if ($check->burining == "true") {
+        $write = fopen("data/".$folder1.'/'.$folder2.'/'.$files.".bar", "w") or die("Unable to open file!");
         fclose($write);
     }
 
@@ -95,11 +100,11 @@ Deny from all";
     $files = substr($idunique, 5, 24);
 
     // Si l'url est mauvaise, on s'évite la création des dossiers
-    if (file_exists($folder1.'/'.$folder2."/". $files) == null) {
+    if (file_exists("data/".$folder1.'/'.$folder2."/". $files) == null) {
         echo "Ce n'est pas le bon url, pour corriger : https://youtu.be/dQw4w9WgXcQ";
     } else {
         // Lecture du fichier
-        $read =  file_get_contents($folder1.'/'.$folder2."/". $files);
+        $read =  file_get_contents("data/".$folder1.'/'.$folder2."/". $files);
         // Vérification du timestamp
         $check = json_decode($read);
         //flag timer
@@ -107,29 +112,28 @@ Deny from all";
         // Vérification de la péremption
         if ($check->time == time() || $check->time < time() && $check->time != 0) {
             $timer = 1;
-            unlink($folder1.'/'.$folder2."/". $files);
-            if (file_exists($folder1.'/'.$folder2."/". $files . '.bar')!= false) {
-                unlink($folder1.'/'.$folder2."/". $files. '.bar');
+            unlink("data/".$folder1.'/'.$folder2."/". $files);
+            if (file_exists("data/".$folder1.'/'.$folder2."/". $files . '.bar')!= false) {
+                unlink("data/".$folder1.'/'.$folder2."/". $files. '.bar');
             }
             // Suppression des dossiers vides
-            $fol2 = new FilesystemIterator($folder1.'/'.$folder2, FilesystemIterator::SKIP_DOTS);
+            $fol2 = new FilesystemIterator("data/".$folder1.'/'.$folder2, FilesystemIterator::SKIP_DOTS);
             if (iterator_count($fol2) == 1) {
-                unlink($folder1.'/'.$folder2."/.htaccess");
-                rmdir($folder1.'/'.$folder2);
+                unlink("data/".$folder1.'/'.$folder2."/.htaccess");
+                rmdir("data/".$folder1.'/'.$folder2);
             }
             $fol1 = new FilesystemIterator($folder1, FilesystemIterator::SKIP_DOTS);
             if (iterator_count($fol1) == 1) {
-                unlink($folder1."/.htaccess");
-                rmdir($folder1);
+                unlink("data/".$folder1."/.htaccess");
+                rmdir("data/".$folder1);
             }
         }
         // suppression du fichier si burn after reading
-        if (file_exists($folder1.'/'.$folder2."/". $files . '.bar') != false) {
-            unlink($folder1.'/'.$folder2."/". $files);
-            unlink($folder1.'/'.$folder2."/". $files. '.bar');
+        if (file_exists("data/".$folder1.'/'.$folder2."/". $files . '.bar') != false) {
+            unlink("data/".$folder1.'/'.$folder2."/". $files);
+            unlink("data/".$folder1.'/'.$folder2."/". $files. '.bar');
         }
-    }
-    ?>
+    } ?>
 <script>
 
   // Variable vérifiant si le fichier doit être afficher
@@ -215,7 +219,8 @@ Deny from all";
       // Ajout dans le JSON du time
       var data = JSON.parse(encrypt);  //parse the JSON
       var test = Object.assign({"time" : tamp},data);
-      var txt = JSON.stringify(test);
+      var burn = Object.assign({"burining" : burn},test);
+      var txt = JSON.stringify(burn);
       // Renvoi en post le message chiffré et son id
       var post = $.ajax({
           type: "POST",
@@ -223,7 +228,6 @@ Deny from all";
           data: {
             crypto: txt,
             id: input,
-            burning : burn,
           },
           success: function( element ) {
             // c'est l'echec
